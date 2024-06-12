@@ -15,6 +15,7 @@ export default createStore({
         chain: "",
         deployHash: "",
         contractAddress: "0xFaFF426CeF916f534d77F35eD314bEB688FFD1bC",
+        isConnected: false, // Added to keep track of connection status
     },
     getters: {
     },
@@ -39,6 +40,7 @@ export default createStore({
                 }
                 else {
                     alert("Metamask is not installed!")
+                    state.isConnected = false;
                 }
             }
             else {
@@ -50,6 +52,7 @@ export default createStore({
             // подключаем аккаунт
             await ethereum.request({ method: "eth_requestAccounts" })
                 .then(accounts => {
+                    state.isConnected = true;
                     state.address = ethers.utils.getAddress(accounts[0])
                     state.signer = provider.getSigner()
                     console.log(`Account ${state.address} connected`)
@@ -83,6 +86,7 @@ export default createStore({
             }
 
             ethereum.on('accountsChanged', (accounts) => {
+                state.isConnected = true;
                 state.address = ethers.utils.getAddress(accounts[0])
                 state.signer = provider.getSigner()
                 console.log(`accounts changed to ${state.address}`)
@@ -123,38 +127,49 @@ export default createStore({
                 }
             })
         },
-        async createERC20Token({state}, args){
-            const [name, symbol, initialSupply] = args
-            const iContract = new ethers.utils.Interface(ABI)
-
-            const data = iContract.encodeFunctionData("createERC20Token", [name, symbol, initialSupply])
-
-            const txHash = await window.ethereum.request({
-                method: "eth_sendTransaction",
-                params: [{
-                    from: state.address,
-                    to: state.contractAddress,
-                    data: data
-                }]
-            })
-            console.log(`Tx hash: ${txHash}`)
-            return txHash
+        async createERC20Token({ state }, args) {
+            const [name, symbol, initialSupply] = args;
+            const iContract = new ethers.utils.Interface(ABI);
+    
+            const data = iContract.encodeFunctionData("createERC20Token", [name, symbol, initialSupply]);
+    
+            try {
+                const txHash = await window.ethereum.request({
+                    method: "eth_sendTransaction",
+                    params: [{
+                        from: state.address,
+                        to: state.contractAddress,
+                        data: data
+                    }]
+                });
+                console.log(`Tx hash: ${txHash}`);
+                return txHash;
+            } catch (error) {
+                console.error("Transaction declined by user", error);
+                throw new Error("Transaction declined by user.");  // Propagate the error message
+            }
         },
-        async createERC721Token({state}, args){
-            const [name, symbol] = args
-            const iContract = new ethers.utils.Interface(ABI)
-
-            const data = iContract.encodeFunctionData("createERC721Token", [name, symbol])
-
-            const txHash = await window.ethereum.request({
-                method: "eth_sendTransaction",
-                params: [{
-                    from: state.address,
-                    to: state.contractAddress,
-                    data: data
-                }]
-            })
-            console.log(`Tx hash: ${txHash}`)
+        async createERC721Token({ state }, args) {
+            const [name, symbol] = args;
+            const iContract = new ethers.utils.Interface(ABI);
+    
+            const data = iContract.encodeFunctionData("createERC721Token", [name, symbol]);
+    
+            try {
+                const txHash = await window.ethereum.request({
+                    method: "eth_sendTransaction",
+                    params: [{
+                        from: state.address,
+                        to: state.contractAddress,
+                        data: data
+                    }]
+                });
+                console.log(`Tx hash: ${txHash}`);
+                return txHash;
+            } catch (error) {
+                console.error("Transaction declined by user", error);
+                throw new Error("Transaction declined by user.");  // Propagate the error message
+            }
         }
     },
     modules: {

@@ -1,13 +1,13 @@
 const fs = require('fs');
 const solc = require('solc');
 
-function myCompiler(solc, fileName, contractName, contractCode){
+function myCompiler(solc, fileName, contractName, contractCode) {
     let input = {
         language: 'Solidity',
         sources: {
             [fileName]: {
                 content: contractCode
-        }
+            }
         },
         settings: {
             outputSelection: {
@@ -20,11 +20,20 @@ function myCompiler(solc, fileName, contractName, contractCode){
 
     let output = JSON.parse(solc.compile(JSON.stringify(input)));
 
-    //console.log("Compilation result: ",  output.contracts[fileName])
+    console.log("Compilation result: ",  output)
 
-    let ABI = output.contracts[fileName][contractName].abi
-    let bytecode = output.contracts[fileName][contractName].evm.bytecode.object
-    
+    let contract = output.contracts[fName][cName];
+
+    if (contract) {
+        let ABI = contract.abi;
+        let bytecode = contract.evm.bytecode.object;
+
+        fs.writeFileSync(__dirname + '\\' + cName + '.abi', JSON.stringify(ABI));
+        fs.writeFileSync(__dirname + '\\' + cName + '.bin', bytecode);
+    } else {
+        console.log("Contract compilation failed.");
+    }
+
     // console.log(ABI)
     // console.log(bytecode)
 
@@ -32,23 +41,23 @@ function myCompiler(solc, fileName, contractName, contractCode){
     fs.writeFileSync(__dirname + '\\' + contractName + '.bin', bytecode)
 }
 
-let fName = "TokenCreator.sol"
-let cName = "TokenFactory"
+let fName = "Marketplace.sol"
+let cName = "NFTMarketplace"
 let cCode = fs.readFileSync(__dirname + '\\' + fName, 'utf-8')
 
 
-try{
+try {
     myCompiler(solc, fName, cName, cCode)
-}catch(err){
+} catch (err) {
     console.log(err)
 
     // let solcx = solc.setupMethods(require('./soljson-v0.8.15+commit.e14f2714'))
 
     let compileVersion = "v0.8.20+commit.a1b79de6"
     solc.loadRemoteVersion(compileVersion, (err, solcSnapshot) => {
-        if(err){
+        if (err) {
             console.log(err)
-        }else{
+        } else {
             myCompiler(solcSnapshot, fName, cName, cCode)
         }
     })
